@@ -519,7 +519,13 @@ export function apply(ctx: DshContext) {
         error => link.send({ type: 'sessions', reqId: msg.reqId, items: [], error: String(error?.message ?? error) }),
       )
     } else if (msg.type === 'focus') {
-      if (typeof msg.sessionId === 'string') requestFocus(msg.sessionId)
+      if (typeof msg.sessionId === 'string') {
+        // Opening the session in DSH hands it to the user: a card closing
+        // later must not archive it, and a pending archive is off.
+        started.delete(msg.sessionId)
+        archiving.delete(msg.sessionId)
+        requestFocus(msg.sessionId)
+      }
     } else if (msg.type === 'archive') {
       if (typeof msg.sessionId === 'string') void archiveSession(msg.sessionId)
     } else if (msg.type === 'suggest-request') {
