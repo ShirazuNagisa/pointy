@@ -239,6 +239,16 @@ func (a *DSH) Open(sessionID string) {
 // WillQuit runs the cleanup due when the plugin was uninstalled.
 func (a *DSH) WillQuit() { a.host.willQuit() }
 
+// Archive asks the plugin to archive a session Pointy started, which takes
+// it out of DSH's list without deleting it. A session the user started is
+// the plugin's to keep.
+func (a *DSH) Archive(sessionID string) bool {
+	if sessionID == "" {
+		return false
+	}
+	return a.send(mustJSON(map[string]string{"type": "archive", "sessionId": sessionID}))
+}
+
 func (a *DSH) changed() {
 	if a.deps.OnChange != nil {
 		a.deps.OnChange()

@@ -46,6 +46,7 @@
     "shakeHigh": "高：轻晃就行",
     "guide": "使用说明…",
     "dnd": "勿扰模式",
+    "autoArchive": "会话结束后自动归档",
     "quit": "退出 Pointy"
   },
   "approval": {

@@ -38,6 +38,7 @@ func TestSettingsRoundTripElectronFile(t *testing.T) {
 	}
 	json.Unmarshal([]byte(electron), &want)
 	want["dnd"] = true
+	want["autoArchive"] = true
 	if !equalJSON(got, want) {
 		t.Fatalf("wrote %s, want %v", b, want)
 	}
@@ -46,7 +47,7 @@ func TestSettingsRoundTripElectronFile(t *testing.T) {
 func TestSettingsDefaultsWithoutFile(t *testing.T) {
 	home := t.TempDir()
 	st := LoadSettings(home)
-	if s := st.Get(); !s.Shake || s.ShakeLevel != ShakeMedium || s.DND || s.Welcomed {
+	if s := st.Get(); !s.Shake || s.ShakeLevel != ShakeMedium || !s.AutoArchive || s.DND || s.Welcomed {
 		t.Fatalf("defaults %+v", s)
 	}
 	st.Update(func(s *Settings) { s.Welcomed = true })
@@ -55,6 +56,7 @@ func TestSettingsDefaultsWithoutFile(t *testing.T) {
   "dnd": false,
   "shake": true,
   "shakeLevel": "medium",
+  "autoArchive": true,
   "welcomed": true
 }`
 	if string(b) != want {
@@ -66,7 +68,7 @@ func TestSettingsKeepDefaultsForMissingKeys(t *testing.T) {
 	home := t.TempDir()
 	os.WriteFile(filepath.Join(home, "settings.json"), []byte(`{"dnd":true}`), 0o644)
 	s := LoadSettings(home).Get()
-	if !s.DND || !s.Shake || s.ShakeLevel != ShakeMedium {
+	if !s.DND || !s.Shake || s.ShakeLevel != ShakeMedium || !s.AutoArchive {
 		t.Fatalf("got %+v", s)
 	}
 }

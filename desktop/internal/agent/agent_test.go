@@ -362,3 +362,17 @@ func TestAdoptStartsOrphanCheck(t *testing.T) {
 		t.Fatal("adopted Pointy outlived its host")
 	}
 }
+
+func TestArchive(t *testing.T) {
+	a := New(Deps{}, HostOptions{})
+	p := serve(t, a).connect(t)
+	if !a.Archive("s1") {
+		t.Fatal("archive not sent")
+	}
+	if m := p.read(); m["type"] != "archive" || m["sessionId"] != "s1" {
+		t.Fatalf("plugin got %v", m)
+	}
+	if a.Archive("") {
+		t.Fatal("sent an archive without a session")
+	}
+}

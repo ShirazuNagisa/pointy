@@ -20,6 +20,7 @@ var (
 	TrayShakeHigh          = key("tray.shakeHigh")
 	TrayGuide              = key("tray.guide")
 	TrayDND                = key("tray.dnd")
+	TrayAutoArchive        = key("tray.autoArchive")
 	TrayQuit               = key("tray.quit")
 
 	ApprovalTitle = key("approval.title")

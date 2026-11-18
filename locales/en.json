@@ -47,6 +47,7 @@
     "shakeHigh": "High: a light shake will do",
     "guide": "How to Use…",
     "dnd": "Do Not Disturb",
+    "autoArchive": "Archive the Session When Closed",
     "quit": "Quit Pointy"
   },
   "approval": {

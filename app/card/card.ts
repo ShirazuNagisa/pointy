@@ -937,12 +937,12 @@ function keepAsPill() {
 }
 function dismiss() {
   if (sessionId !== undefined && !finished && status.className !== 'error') keepAsPill()
-  else window.card.close()
+  else window.card.close(sessionId)
 }
 $('close').addEventListener('click', dismiss)
 window.card.onSetAside(() => {
   if (sessionId !== undefined) keepAsPill()
-  else window.card.close()
+  else window.card.close(sessionId)
 })
 window.card.onRestore(() => {
   const el = $('card')
