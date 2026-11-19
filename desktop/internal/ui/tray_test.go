@@ -110,7 +110,7 @@ func TestTrayTurnsAutoArchiveOff(t *testing.T) {
 	settings := config.LoadSettings(t.TempDir())
 	d := TrayDeps{Settings: settings, Visibility: NewVisibility(settings), Agent: func() agent.Status { return agent.Status{} }, Extensions: func() int { return 0 }}
 	_, items := trayContent(d)
-	item := find(items, "会话结束后自动归档")
+	item := find(items, "关闭卡片时归档会话")
 	if item == nil || !item.Checked || item.Type != mygo.MenuItemCheckbox {
 		t.Fatalf("auto-archive entry %+v", item)
 	}
@@ -122,7 +122,7 @@ func TestTrayTurnsAutoArchiveOff(t *testing.T) {
 		t.Fatal("auto-archive still on after turning it off")
 	}
 	_, items = trayContent(d)
-	if it := find(items, "会话结束后自动归档"); it.Checked {
+	if it := find(items, "关闭卡片时归档会话"); it.Checked {
 		t.Fatal("auto-archive still checked")
 	}
 }

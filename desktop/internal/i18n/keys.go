@@ -30,6 +30,7 @@ var (
 	HintElevated   = key("hint.elevated")
 	HintNoHook     = key("hint.noHook")
 	HintWebSession = key("hint.webSession")
+	HintArchived   = key("hint.archived")
 
 	HintBlockedPassword = key("hint.blockedPassword")
 	HintBlockedLogin    = key("hint.blockedLogin")

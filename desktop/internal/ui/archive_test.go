@@ -64,3 +64,23 @@ func TestArchiveWithoutARelayKeepsQuiet(t *testing.T) {
 	u := &UI{deps: Deps{Settings: config.LoadSettings(t.TempDir())}}
 	u.archiveSession("s1")
 }
+
+func TestArchiveHintShowsOnce(t *testing.T) {
+	settings := config.LoadSettings(t.TempDir())
+	u := &UI{deps: Deps{Settings: settings}}
+	if text := u.archiveHint("s1"); text == "" {
+		t.Fatal("no hint for the first archived session")
+	}
+	if !settings.Get().ArchiveHinted {
+		t.Fatal("the hint shown was not recorded")
+	}
+	if text := u.archiveHint("s2"); text != "" {
+		t.Fatalf("hint shown twice: %q", text)
+	}
+	if text := u.archiveHint(""); text != "" {
+		t.Fatal("hinted without a session")
+	}
+	if text := (&UI{}).archiveHint("s3"); text != "" {
+		t.Fatal("hinted without settings")
+	}
+}

@@ -32,12 +32,13 @@ type Status struct {
 
 // Deps are what the relay reaches outside itself. Unset ones do nothing.
 type Deps struct {
-	ToCards  func(msg jsontext.Value)
-	OnTask   func(TaskEvent)
-	Notify   func(title, body string, onClick func())
-	ShowHint func(text string)
-	FocusTab func(origin string) bool
-	OpenURL  func(url string)
+	ToCards    func(msg jsontext.Value)
+	OnTask     func(TaskEvent)
+	OnArchived func(sessionID string)
+	Notify     func(title, body string, onClick func())
+	ShowHint   func(text string)
+	FocusTab   func(origin string) bool
+	OpenURL    func(url string)
 	// AllowForeground lets the app Pointy opens come to the front.
 	AllowForeground func()
 	OnChange        func()
@@ -176,6 +177,10 @@ func (a *DSH) onPluginMessage(m server.Message) {
 		a.pending = max(0, a.pending-1)
 		a.mu.Unlock()
 		a.changed()
+	case "archived":
+		if a.deps.OnArchived != nil {
+			a.deps.OnArchived(msg.SessionID)
+		}
 	case "quit":
 		if a.host.isManaged() {
 			a.log("quit", "plugin requested quit")

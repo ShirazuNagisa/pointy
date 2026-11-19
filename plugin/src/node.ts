@@ -88,8 +88,9 @@ const RPC_CHANNEL = '/pointy'
 const FOCUS_POLL_MS = 20_000
 const FOCUS_PENDING_MS = 8_000
 const MAX_DROPPED_FILES = 20
-/** A session still working when its card closes is archived this much later. */
+/** A session still working when its card closes is retried this often, this many times. */
 const ARCHIVE_RETRY_MS = 3_000
+const ARCHIVE_TRIES = 4
 /** Desktop DSH runs plugins through dsh-desktop-host/lib/index.js; the web UI (`dsh <profile>`) goes through lib/cli.js. */
 const DESKTOP = process.argv.some((a) => /dsh-desktop-host[\\/]lib[\\/]index\.js$/.test(a))
 const PLUGIN_VERSION: string = (() => {
@@ -406,8 +407,10 @@ export function apply(ctx: DshContext) {
         else if (kind === 'error') push(sid, 'error', { detail: String(data.reason?.message ?? data.reason?.error ?? 'turn ended with an error').slice(0, 2000) })
         else push(sid, 'idle', { detail: kind })
         if (asks.has(sid)) link.send({ type: 'ask-done', askId: asks.get(sid), sessionId: sid, title: titles.get(sid), reason: kind })
-        // A card that closed while this turn ran leaves its session here.
-        if (archiving.delete(sid)) void archiveSession(sid, true)
+        // A card that closed while this turn ran leaves its session here. The
+        // turn/end event lands while the agent still reads as running, so the
+        // archive usually has to wait for the idle that follows.
+        if (archiving.delete(sid)) void archiveSession(sid)
         break
       }
     }
@@ -415,6 +418,9 @@ export function apply(ctx: DshContext) {
 
   ctx.on('agent/status', ({ agent, status }) => {
     link.send({ type: 'status', sessionId: agent.id, running: status === 'running' })
+    // A session whose archive waited for its work: the registry only stops
+    // calling it active once its agent settles.
+    if (status === 'idle' && archiving.delete(agent.id)) void archiveSession(agent.id)
   }, { global: true })
 
   ctx.on('agent/error', ({ agent, error }) => {
@@ -681,7 +687,7 @@ export function apply(ctx: DshContext) {
 
   // A closed card hands back the session it asked in. Only the ones Pointy
   // started are archived: a session the user picked is theirs to keep.
-  async function archiveSession(sessionId: string, retried = false) {
+  async function archiveSession(sessionId: string, attempt = 0) {
     if (!sessionId || !started.has(sessionId)) return
     const registry: WorkspaceRegistry | undefined = ctx.get('workspaceRegistry')
     if (!registry?.archiveSession) {
@@ -693,17 +699,22 @@ export function apply(ctx: DshContext) {
       await registry.archiveSession(sessionId)
       forgetSession(sessionId)
       logger.info(`pointy: archived the session a closed card asked in (${sessionId})`)
+      // Lets Pointy explain the session that just left DSH's list, once.
+      link.send({ type: 'archived', sessionId })
     } catch (error) {
       if ((error as Error)?.name === 'WorkspaceActiveSessionError') {
-        // Still working (a pill went away before the answer came in): the
-        // turn ends later, and that is when it can be archived.
+        // Still working: the turn/end that woke us lands before the agent
+        // reads idle, and a pill can go away mid-answer. Retry on a timer
+        // and again when the agent settles.
         archiving.add(sessionId)
-        if (!retried) {
+        if (attempt < ARCHIVE_TRIES) {
           const timer = setTimeout(() => {
             archiveTimers.delete(timer)
-            void archiveSession(sessionId, true)
+            void archiveSession(sessionId, attempt + 1)
           }, ARCHIVE_RETRY_MS)
           archiveTimers.add(timer)
+        } else {
+          logger.warn(`pointy: session ${sessionId} was still working; archiving it once the agent is idle`)
         }
         return
       }

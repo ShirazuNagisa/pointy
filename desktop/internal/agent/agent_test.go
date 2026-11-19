@@ -376,3 +376,18 @@ func TestArchive(t *testing.T) {
 		t.Fatal("sent an archive without a session")
 	}
 }
+
+func TestArchivedNotice(t *testing.T) {
+	archived := make(chan string, 1)
+	a := New(Deps{OnArchived: func(sessionID string) { archived <- sessionID }}, HostOptions{})
+	p := serve(t, a).connect(t)
+	p.send(map[string]any{"type": "archived", "sessionId": "s1"})
+	select {
+	case got := <-archived:
+		if got != "s1" {
+			t.Fatalf("archived %q", got)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("no archived notice")
+	}
+}
